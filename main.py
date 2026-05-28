@@ -43,6 +43,38 @@ public:
         m = pos & (pos << 1); if (m & (m <<  2)) return true;
         return false;
     }
+    static uint64_t top_mask(int col)    { return (uint64_t)1 << (5 + col * 7); }
+    static uint64_t bottom_mask(int col) { return (uint64_t)1 << (col * 7); }
+    static uint64_t column_mask(int col) { return ((uint64_t)63) << (col * 7); }
+    static uint64_t bottom_mask_all() {
+        uint64_t m = 0;
+        for (int c = 0; c < WIDTH; ++c) m |= bottom_mask(c);
+        return m;
+    }
+    static uint64_t board_mask() {
+        uint64_t m = 0;
+        for (int c = 0; c < WIDTH; ++c) m |= column_mask(c);
+        return m;
+    }
+};
+
+class TranspositionTable {
+    static const size_t SIZE = 16777259;
+    uint64_t *K; uint8_t *V;
+public:
+    TranspositionTable()  { K = new uint64_t[SIZE](); V = new uint8_t[SIZE](); }
+    ~TranspositionTable() { delete[] K; delete[] V; }
+    void    clear()                        { std::fill(K, K+SIZE, 0); std::fill(V, V+SIZE, 0); }
+    void    put(uint64_t key, uint8_t val) { size_t i=key%SIZE; K[i]=key; V[i]=val; }
+    uint8_t get(uint64_t key)        const { size_t i=key%SIZE; return K[i]==key ? V[i] : 0; }
+};
+
+static TranspositionTable transTable;
+static bool         g_timeout = false;
+static unsigned int g_nodes   = 0;
+static const int    COL_ORDER[] = {3, 2, 4, 1, 5, 0, 6};
+static std::chrono::steady_clock::time_point g_start;
+
 """
 
 _solver_lib = None
@@ -88,3 +120,4 @@ def _board_to_bitboard(board, my_mark):
                 if val == my_mark: cur |= (1 << bit)
             bit += 1
     return cur, mask
+
