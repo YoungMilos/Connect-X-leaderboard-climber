@@ -124,8 +124,8 @@ class TranspositionTable {
 public:
     TranspositionTable()  { K = new uint64_t[SIZE](); V = new uint8_t[SIZE](); }
     ~TranspositionTable() { delete[] K; delete[] V; }
-    void    clear()                        { std::fill(K, K+SIZE, 0); std::fill(V, V+SIZE, 0); }
-    void    put(uint64_t key, uint8_t val) { size_t i=key%SIZE; K[i]=key; V[i]=val; }
+    void clear()                        { std::fill(K, K+SIZE, 0); std::fill(V, V+SIZE, 0); }
+    void put(uint64_t key, uint8_t val) { size_t i=key%SIZE; K[i]=key; V[i]=val; }
     uint8_t get(uint64_t key)        const { size_t i=key%SIZE; return K[i]==key ? V[i] : 0; }
 };
 
