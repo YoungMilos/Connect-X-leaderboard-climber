@@ -43,6 +43,52 @@ public:
         m = pos & (pos << 1); if (m & (m <<  2)) return true;
         return false;
     }
+
+    bool canWinNext() const {
+        return (compute_winning_position(current_position, mask) & possible()) != 0;
+    }
+
+    uint64_t opponent_winning_position() const {
+        return compute_winning_position(current_position ^ mask, mask);
+    }
+
+    uint64_t possibleNonLosingMoves() const {
+        assert(!canWinNext());
+        uint64_t possible_mask = possible();
+        uint64_t opponent_win  = opponent_winning_position();
+        uint64_t forced        = possible_mask & opponent_win;
+        if (forced) {
+            if (forced & (forced - 1)) return 0;
+            possible_mask = forced;
+        }
+        return possible_mask & ~(opponent_win >> 1);
+    }
+
+    static uint64_t compute_winning_position(uint64_t pos, uint64_t mask) {
+        uint64_t r = (pos << 1) & (pos << 2) & (pos << 3);
+        uint64_t p;
+
+        p = (pos << (HEIGHT+1)) & (pos << 2*(HEIGHT+1));
+        r |= p & (pos << 3*(HEIGHT+1)); r |= p & (pos >> (HEIGHT+1));
+        p >>= 3*(HEIGHT+1);
+        r |= p & (pos << (HEIGHT+1));   r |= p & (pos >> 3*(HEIGHT+1));
+
+        p = (pos << HEIGHT) & (pos << 2*HEIGHT);
+        r |= p & (pos << 3*HEIGHT); r |= p & (pos >> HEIGHT);
+        p >>= 3*HEIGHT;
+        r |= p & (pos << HEIGHT);   r |= p & (pos >> 3*HEIGHT);
+
+        p = (pos << (HEIGHT+2)) & (pos << 2*(HEIGHT+2));
+        r |= p & (pos << 3*(HEIGHT+2)); r |= p & (pos >> (HEIGHT+2));
+        p >>= 3*(HEIGHT+2);
+        r |= p & (pos << (HEIGHT+2));   r |= p & (pos >> 3*(HEIGHT+2));
+
+        return r & (board_mask() ^ mask);
+    }
+
+    int      moveScore(uint64_t move) const { return __builtin_popcountll(compute_winning_position(current_position | move, mask)); }
+    uint64_t key()                    const { return current_position + mask; }
+    
     static uint64_t top_mask(int col)    { return (uint64_t)1 << (5 + col * 7); }
     static uint64_t bottom_mask(int col) { return (uint64_t)1 << (col * 7); }
     static uint64_t column_mask(int col) { return ((uint64_t)63) << (col * 7); }
@@ -56,6 +102,20 @@ public:
         for (int c = 0; c < WIDTH; ++c) m |= column_mask(c);
         return m;
     }
+};
+
+class MoveSorter {
+public:
+    unsigned int size;
+    struct { uint64_t move; int score; } entries[WIDTH];
+
+    MoveSorter() : size(0) {}
+    void add(uint64_t move, int score) {
+        int pos = size++;
+        for (; pos && entries[pos-1].score > score; --pos) entries[pos] = entries[pos-1];
+        entries[pos] = {move, score};
+    }
+    uint64_t getNext() { return size ? entries[--size].move : 0; }
 };
 
 class TranspositionTable {
