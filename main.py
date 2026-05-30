@@ -272,3 +272,20 @@ def _board_to_bitboard(board, my_mark):
                 if val == my_mark: cur |= (1 << bit)
             bit += 1
     return cur, mask
+
+# ==============================================================================
+# PART 2: PYTHON HEURISTIC SEARCH ENGINE
+# ==============================================================================
+
+ROWS, COLS = 6, 7
+H, H1 = 6, 7
+INF, WIN_SCORE = 10_000_000, 1_000_000
+COL_ORDER = [3, 2, 4, 1, 5, 0, 6]
+
+# Các mảng dùng cho phân tích tĩnh, Zobrist, History và Killer Heuristics tầng Python
+ZOBRIST = [[[random.getrandbits(64) for _ in range(2)] for _ in range(ROWS)] for _ in range(COLS)]
+HISTORY = [[[0 for _ in range(2)] for _ in range(ROWS)] for _ in range(COLS)]
+KILLERS = [[-1, -1] for _ in range(42)]
+TT_SIZE = 1048576  # 2^20
+TT_K = [0] * TT_SIZE
+TT_V = [0] * TT_SIZE
