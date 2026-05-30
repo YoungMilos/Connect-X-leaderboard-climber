@@ -1,0 +1,65 @@
+# === Python Junk ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# === AI / Data Science Junk ===
+.ipynb_checkpoints/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# === IDEs Junk ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === System Junk ===
+Thumbs.db
+Ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# === C++ Junk ===
+# File thực thi và file thư viện liên kết động
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+
+# File đối tượng sau khi biên dịch (Object files)
+*.o
+*.obj
+*.a
+*.lib
+
+# Thư mục chứa sản phẩm sau khi build (Biên dịch)
+build/
+bin/
+obj/
+x64/
+x86/
+Debug/
+Release/
+
+# File rác sinh ra bởi Visual Studio / MSBuild
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
