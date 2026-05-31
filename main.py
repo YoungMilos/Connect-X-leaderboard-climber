@@ -286,3 +286,92 @@ KILLERS = [[-1, -1] for _ in range(42)]
 TT_SIZE = 1048576  # 2^20
 TT_K = [0] * TT_SIZE
 TT_V = [0] * TT_SIZE
+
+def _is_win(pos):
+    m = pos & (pos >> 7)
+    if m & (m >> 14): return True
+    m = pos & (pos >> 6)
+    if m & (m >> 12): return True
+    m = pos & (pos >> 8)
+    if m & (m >> 16): return True
+    m = pos & (pos >> 1)
+    if m & (m >> 2): return True
+    return False
+
+def _negamax(pos, mask, depth, alpha, beta, ply, turn_color, z_key):
+    global TT_K, TT_V, KILLERS, HISTORY, ZOBRIST, INF, WIN_SCORE
+
+    if _is_win(pos ^ mask):
+        return -(WIN_SCORE - ply)
+
+    if bin(mask).count('1') == 42:
+        return 0
+
+    if depth == 0:
+        return 0
+
+    tt_idx = z_key % TT_SIZE
+    tt_entry = TT_V[tt_idx]
+    
+    if TT_K[tt_idx] == z_key and tt_entry != 0:
+        tt_depth, tt_flag, tt_val, tt_move = tt_entry
+        if tt_depth >= depth:
+            if tt_flag == 0:
+                return tt_val
+            elif tt_flag == 1:
+                alpha = max(alpha, tt_val)
+            elif tt_flag == 2:
+                beta = min(beta, tt_val)
+            if alpha >= beta:
+                return tt_val
+
+    moves = []
+    for col in COL_ORDER:
+        top_mask = 1 << (5 + col * 7)
+        if (mask & top_mask) == 0:
+            score = 0
+            if KILLERS[ply][0] == col:
+                score += 900000
+            elif KILLERS[ply][1] == col:
+                score += 800000
+            else:
+                row = ((mask + (1 << (col * 7))) ^ mask).bit_length() - 1 - (col * 7)
+                score += HISTORY[col][row][turn_color]
+            moves.append((score, col))
+
+    moves.sort(key=lambda x: x[0], reverse=True)
+
+    best_val = -INF
+    best_move = -1
+    orig_alpha = alpha
+
+    for _, col in moves:
+        new_mask = mask | (mask + (1 << (col * 7)))
+        new_pos = pos ^ mask
+        row = (new_mask ^ mask).bit_length() - 1 - (col * 7)
+        new_z_key = z_key ^ ZOBRIST[col][row][turn_color]
+        
+        val = -_negamax(new_pos, new_mask, depth - 1, -beta, -alpha, ply + 1, 1 - turn_color, new_z_key)
+
+        if val > best_val:
+            best_val = val
+            best_move = col
+
+        alpha = max(alpha, val)
+        if alpha >= beta:
+            if KILLERS[ply][0] != col:
+                KILLERS[ply][1] = KILLERS[ply][0]
+                KILLERS[ply][0] = col
+            HISTORY[col][row][turn_color] += depth * depth
+            break
+
+    flag = 0
+    if best_val <= orig_alpha:
+        flag = 2
+    elif best_val >= beta:
+        flag = 1
+        
+    TT_K[tt_idx] = z_key
+    TT_V[tt_idx] = (depth, flag, best_val, best_move)
+
+    return best_val
