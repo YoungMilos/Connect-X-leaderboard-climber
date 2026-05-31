@@ -375,3 +375,42 @@ def _negamax(pos, mask, depth, alpha, beta, ply, turn_color, z_key):
     TT_V[tt_idx] = (depth, flag, best_val, best_move)
 
     return best_val
+
+def _search(pos, mask, max_depth, turn_color, z_key, start_time, time_limit):
+    global INF, TT_K, TT_V, TT_SIZE
+    
+    best_move = COL_ORDER[0]
+    last_score = 0
+    
+    for depth in range(1, max_depth + 1):
+        if time.time() - start_time > time_limit:
+            break
+            
+        if depth < 3:
+            alpha = -INF
+            beta = INF
+        else:
+            alpha = last_score - 50
+            beta = last_score + 50
+            
+        while True:
+            score = _negamax(pos, mask, depth, alpha, beta, 0, turn_color, z_key)
+            
+            if time.time() - start_time > time_limit:
+                break
+                
+            if score <= alpha:
+                alpha = -INF
+            elif score >= beta:
+                beta = INF
+            else:
+                last_score = score
+                break
+                
+        tt_idx = z_key % TT_SIZE
+        if TT_K[tt_idx] == z_key and TT_V[tt_idx] != 0:
+            tt_move = TT_V[tt_idx][3]
+            if tt_move != -1:
+                best_move = tt_move
+                
+    return best_move
