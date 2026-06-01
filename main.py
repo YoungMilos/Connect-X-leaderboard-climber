@@ -414,3 +414,16 @@ def _search(pos, mask, max_depth, turn_color, z_key, start_time, time_limit):
                 best_move = tt_move
                 
     return best_move
+
+def _get_v4_params(board, my_mark):
+    pos = mask = zh = 0
+    for kr in range(6):
+        our_r = 5 - kr
+        for c in range(7):
+            cell = board[kr*7 + c]
+            if cell:
+                bit = 1 << (c*7 + our_r)
+                mask |= bit
+                if cell == my_mark: pos |= bit
+                zh ^= ZOBRIST[cell-1][c][our_r]
+    return pos, mask, zh
